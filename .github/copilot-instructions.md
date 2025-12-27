@@ -38,6 +38,8 @@ This repository is a single-file Vue 3 + Tailwind static app (see [index.html](i
      - Test `Import 5e.tools JSON` flow with a small sample JSON.
      - Test `Share Scroll` to confirm `loadout` param round-trips via URL.
 
+    - Important: Do NOT run `npm run dev` or `npm test` in watch mode. Run tests as a single-pass test command (for example, `npm test -- --run` when using Vitest).
+
    - CI / adding tests: if you add CI workflows, ensure they run the repo's test command (if you add tests, include a top-level `make test`, `npm test`, or `pytest` step) and fail fast on lint/test failures.
 
    - PR classification: mark PRs clearly as Feature/Chore/Bugfix in the title and use focused commits so reviewers can inspect incremental work easily.
