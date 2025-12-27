@@ -1,7 +1,10 @@
 import { calculateCost, getIconForType, determineCategory } from '../utils'
+import { useInventoryStore } from '../stores/inventoryStore'
+import { useToast } from './useToast'
 
-export function useImport(params: { dbItems: any; showToast: (msg: string) => void }) {
-  const { dbItems, showToast } = params
+export function useImport() {
+  const store = useInventoryStore()
+  const { showToast } = useToast()
 
   const import5eData = (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -16,9 +19,9 @@ export function useImport(params: { dbItems: any; showToast: (msg: string) => vo
           const weight = i.weight || 0
           return { id: i.name.toLowerCase().replace(/\s+/g, '-'), name: i.name, weight, slotCost: calculateCost(weight), icon: getIconForType(i.type, i.name), category: determineCategory(i.type, i.name) }
         })
-        const existingIds = new Set(dbItems.value.map((i: any) => i.id))
+        const existingIds = new Set(store.dbItems.map((i: any) => i.id))
         const unique = newItems.filter((i: any) => !existingIds.has(i.id))
-        dbItems.value = [...dbItems.value, ...unique]
+        store.dbItems = [...store.dbItems, ...unique]
         if (unique.length > 0) showToast(`Added ${unique.length} items!`)
         else showToast('No new items found.')
       } catch (err) { showToast('Failed to parse JSON.') }

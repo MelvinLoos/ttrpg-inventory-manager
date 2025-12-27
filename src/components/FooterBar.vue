@@ -9,5 +9,13 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ currentLoadPoints:number, strength:number, isOverencumbered:boolean, loadColor:string }>()
+import { computed } from 'vue'
+import { useInventoryStore } from '../stores/inventoryStore'
+
+const store = useInventoryStore()
+
+const currentLoadPoints = computed(() => store.inventory.reduce((sum, item) => sum + item.slotCost, 0))
+const strength = computed(() => store.strength)
+const isOverencumbered = computed(() => currentLoadPoints.value > (strength.value * 3))
+const loadColor = computed(() => { const ratio = currentLoadPoints.value / (strength.value * 3); if (ratio > 1) return 'text-[#8a1c1c]'; if (ratio > 0.8) return 'text-[#d35400]'; return 'text-[#27ae60]' })
 </script>

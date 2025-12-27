@@ -1,6 +1,7 @@
 import { calculateCost } from '../utils'
+import type { Item } from '../types'
 
-export const sampleDb = [
+export const sampleDb: Item[] = [
   { id: 'rope-50', name: 'Rope (50ft)', weight: 10, slotCost: calculateCost(10), icon: '🪢', category: 'gear' },
   { id: 'torch', name: 'Torch', weight: 1, slotCost: calculateCost(1), icon: '🔥', category: 'gear' },
   { id: 'shortsword', name: 'Shortsword', weight: 3, slotCost: calculateCost(3), icon: '⚔️', category: 'weapon' },

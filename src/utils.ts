@@ -1,3 +1,5 @@
+import type { Item, InventoryItem } from './types'
+
 export const calculateCost = (lbs: number) => {
   if (!lbs || lbs <= 1) return 1
   if (lbs <= 3) return 3
@@ -22,13 +24,13 @@ export const getIconForType = (type: string | undefined, name: string) => {
   return '📦'
 }
 
-export const occupiesIndex = (invItem: any, index: number, getSlots = getSlotsNeeded) => {
+export const occupiesIndex = (invItem: InventoryItem, index: number, getSlots = getSlotsNeeded) => {
   if (invItem.slotCost === 1) return invItem.position === index
   const slots = getSlots(invItem.slotCost)
   return index >= invItem.position && index < invItem.position + slots
 }
 
-export const canPlaceItem = (startIndex: number, itemDef: any, inventoryArr: any[], gridSize: number, excludeInstanceId: any = null) => {
+export const canPlaceItem = (startIndex: number, itemDef: Item | InventoryItem, inventoryArr: InventoryItem[], gridSize: number, excludeInstanceId: string | null = null) => {
   if (!itemDef) return false
   if (itemDef.slotCost === 1) {
     const count = inventoryArr.filter(i => i.position === startIndex && i.slotCost === 1 && i.instanceId !== excludeInstanceId).length
@@ -44,7 +46,7 @@ export const canPlaceItem = (startIndex: number, itemDef: any, inventoryArr: any
   return true
 }
 
-export const findFirstFreeSlot = (itemDef: any, inventoryArr: any[], gridSize: number) => {
+export const findFirstFreeSlot = (itemDef: Item, inventoryArr: InventoryItem[], gridSize: number) => {
   for (let i = 0; i < gridSize; i++) if (canPlaceItem(i, itemDef, inventoryArr, gridSize)) return i
   return -1
 }
