@@ -7,14 +7,15 @@ describe('utils.calculateCost', () => {
     expect(calculateCost(0)).toBe(1)
     expect(calculateCost(0.5)).toBe(1)
     expect(calculateCost(1)).toBe(1)
+    expect(calculateCost(2)).toBe(1)
   })
   it('returns 3 for <=3 lbs', () => {
-    expect(calculateCost(2)).toBe(3)
     expect(calculateCost(3)).toBe(3)
+    expect(calculateCost(10)).toBe(3)
   })
   it('rounds up to nearest 3-slot multiple', () => {
-    expect(calculateCost(4)).toBe(6)
-    expect(calculateCost(7)).toBe(9)
+    expect(calculateCost(11)).toBe(6)
+    expect(calculateCost(26)).toBe(9)
   })
 })
 

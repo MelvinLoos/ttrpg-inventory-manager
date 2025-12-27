@@ -1,10 +1,11 @@
 import type { Item, InventoryItem } from './types'
 
-export const calculateCost = (lbs: number) => {
-  if (!lbs || lbs <= 1) return 1
-  if (lbs <= 3) return 3
-  const slots = Math.ceil(lbs / 3)
-  return slots * 3
+export const calculateCost = (lbs: number): number => {
+  if (lbs <= 2) return 1
+  if (lbs <= 10) return 3
+  if (lbs <= 25) return 6
+  if (lbs <= 50) return 9
+  return 12
 }
 
 export const getSlotsNeeded = (cost: number) => cost === 1 ? 1 : cost / 3

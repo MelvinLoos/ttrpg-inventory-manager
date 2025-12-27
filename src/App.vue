@@ -13,7 +13,7 @@
     <Sidebar />
 
     <!-- MAIN -->
-    <div class="flex-1 flex flex-col min-h-0 relative overflow-auto">
+    <div class="flex-1 flex flex-col min-h-0 relative">
       <ErrorBoundary>
         <HeaderBar />
         <GridArea />
