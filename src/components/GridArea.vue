@@ -1,6 +1,6 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-6 flex justify-center items-start custom-scrollbar">
-    <div class="grid grid-cols-4 gap-3 w-full max-w-lg p-4 pb-20 border-2 border-[#d1c4a9] bg-[#f8f1e0] shadow-[inset_0_0_20px_rgba(0,0,0,0.05)] rounded-sm" @mouseleave="onMouseLeave">
+  <div class="flex-1 overflow-y-auto p-2 md:p-6 flex justify-center items-start custom-scrollbar">
+    <div class="grid grid-cols-4 gap-1 md:gap-3 w-full max-w-lg p-4 pb-20 border-2 border-[#d1c4a9] bg-[#f8f1e0] shadow-[inset_0_0_20px_rgba(0,0,0,0.05)] rounded-sm" @mouseleave="onMouseLeave">
       <div v-for="(cell, index) in gridDisplay" :key="index" class="aspect-square relative transition-all duration-200 rounded-sm select-none" :class="[getCellClasses(cell, index), getDragStateClass(index), focusedIndex === index ? 'ring-2 ring-offset-1 ring-[#c5a059]' : '']" tabindex="0" @focus="focusCell(index)" @keydown="(e)=>handleCellKey(e, index, cell)" @dragover.prevent="onDragOver(index)" @drop.prevent="onDrop($event, index)">
         <div v-if="special[index]" class="absolute inset-0 flex flex-col items-center justify-center z-0 pointer-events-none text-[#5c4033] ghost-icon"><i :data-lucide="special[index].icon" class="w-8 h-8 opacity-60"></i><span class="text-[8px] uppercase tracking-widest font-bold mt-1 opacity-60">{{ special[index].label }}</span></div>
 

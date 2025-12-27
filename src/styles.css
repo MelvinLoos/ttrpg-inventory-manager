@@ -4,3 +4,8 @@
 
 /* App-specific small helpers (migrate inline styles later) */
 body { font-family: 'Crimson Text', serif; }
+
+/* Adjust base font size slightly for small mobile devices for readability */
+@media (max-width: 420px) {
+	html { font-size: 14px; }
+}

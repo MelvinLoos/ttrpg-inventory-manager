@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-full md:w-80 bg-[#2a1d15] text-[#dcdcdc] border-r-4 border-[#1a120b] flex flex-col h-1/3 md:h-full z-10 shadow-2xl relative">
+  <aside class="w-full md:w-80 bg-[#2a1d15] text-[#dcdcdc] md:shadow-2xl z-10 relative border-b-4 md:border-b-0 md:border-r-4 border-[#1a120b] flex flex-col h-[40vh] md:h-full">
     <div class="p-5 border-b border-[#3e2723] bg-[#2a1d15]">
       <h2 class="text-xl font-bold text-[#c5a059] flex items-center gap-2 font-fantasy tracking-wider">
         <i data-lucide="book" class="w-5 h-5 text-[#c5a059]"></i> Compendium
