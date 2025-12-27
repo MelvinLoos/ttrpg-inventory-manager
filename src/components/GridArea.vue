@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 overflow-y-auto p-6 flex justify-center items-start custom-scrollbar">
     <div class="grid grid-cols-4 gap-3 w-full max-w-lg p-4 border-2 border-[#d1c4a9] bg-[#f8f1e0] shadow-[inset_0_0_20px_rgba(0,0,0,0.05)] rounded-sm" @mouseleave="onMouseLeave">
-      <div v-for="(cell, index) in gridDisplay" :key="index" class="aspect-square relative transition-all duration-200 rounded-sm select-none" :class="[getCellClasses(cell, index), getDragStateClass(index)]" @dragover.prevent="onDragOver(index)" @drop.prevent="onDrop($event, index)">
+      <div v-for="(cell, index) in gridDisplay" :key="index" class="aspect-square relative transition-all duration-200 rounded-sm select-none" :class="[getCellClasses(cell, index), getDragStateClass(index), focusedIndex === index ? 'ring-2 ring-offset-1 ring-[#c5a059]' : '']" tabindex="0" @focus="focusCell(index)" @keydown="(e)=>handleCellKey(e, index, cell)" @dragover.prevent="onDragOver(index)" @drop.prevent="onDrop($event, index)">
         <div v-if="special[index]" class="absolute inset-0 flex flex-col items-center justify-center z-0 pointer-events-none text-[#5c4033] ghost-icon"><i :data-lucide="special[index].icon" class="w-8 h-8 opacity-60"></i><span class="text-[8px] uppercase tracking-widest font-bold mt-1 opacity-60">{{ special[index].label }}</span></div>
 
         <div v-if="cell.type === 'item'" class="w-full h-full p-1 group relative z-10" draggable="true" @dragstart.stop="startDragExisting($event, cell.item)" @dragend="endDrag">
@@ -22,23 +22,57 @@
         </div>
 
         <div v-else class="w-full h-full flex items-center justify-center text-[#a89f91] font-fantasy text-xs select-none opacity-50 z-10 pointer-events-none">{{ index + 1 }}</div>
+        <div v-if="shouldShowGhost(index)" class="absolute inset-0 z-5 pointer-events-none">
+          <GhostPreview :item="draggingItem" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useInventoryStore } from '../stores/inventoryStore'
 import { useDrag } from '../composables/useDrag'
 import { GRID_CONFIG } from '../constants'
+import GhostPreview from './GhostPreview.vue'
 
 const store = useInventoryStore()
 const drag = useDrag()
-const { startDragExisting, endDrag, onDragOver, onDrop, getDragStateClass } = drag
+const { startDragExisting, endDrag, onDragOver, onDrop, dropAt, getDragStateClass, draggingItem, dragOverIndex, isDragValid } = drag
+
+const focusedIndex = ref<number>(0)
+
+const focusCell = (i:number) => { focusedIndex.value = i }
+
+const handleCellKey = (e: KeyboardEvent, index:number, cell: GridCell) => {
+  const cols = 4
+  if (e.key === 'ArrowRight') { e.preventDefault(); focusedIndex.value = Math.min(store.gridSize - 1, index + 1); return }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); focusedIndex.value = Math.max(0, index - 1); return }
+  if (e.key === 'ArrowDown') { e.preventDefault(); focusedIndex.value = Math.min(store.gridSize - 1, index + cols); return }
+  if (e.key === 'ArrowUp') { e.preventDefault(); focusedIndex.value = Math.max(0, index - cols); return }
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    // if currently dragging, attempt drop
+    if (draggingItem && draggingItem.value) {
+      dropAt(index as number)
+      return
+    }
+    // not dragging: pick up item if present
+    if (cell.type === 'item') store.setDraggingItem(cell.item)
+    else if (cell.type === 'container' && cell.items && cell.items.length > 0) store.setDraggingItem(cell.items[0])
+    return
+  }
+  if (e.key === 'Escape') { e.preventDefault(); endDrag(); return }
+}
+
+type GridCell =
+  | { type: 'empty' }
+  | { type: 'item'; item: import('../types').InventoryItem; part: number }
+  | { type: 'container'; items: import('../types').InventoryItem[] }
 
 const gridDisplay = computed(() => {
-  const cells = Array.from({ length: store.gridSize }, () => ({ type: 'empty' }))
+  const cells: GridCell[] = Array.from({ length: store.gridSize }, () => ({ type: 'empty' }))
   store.inventory.forEach(item => {
     if (item.slotCost === 1) {
       const pos = item.position
@@ -59,7 +93,15 @@ const special = GRID_CONFIG.specialSlots
 
 const onMouseLeave = () => drag.endDrag()
 
+const shouldShowGhost = (index:number) => {
+  const current = draggingItem?.value ?? null
+  const over = dragOverIndex?.value ?? -1
+  if (!current || over === -1) return false
+  const slotsNeeded = current.slotCost === 1 ? 1 : current.slotCost / 3
+  return index >= over && index < over + slotsNeeded
+}
+
 const getItemColor = (cost:number) => cost > 3 ? 'bg-[#8a1c1c] border-[#601010] text-[#f0e6d2]' : cost === 3 ? 'bg-[#556b2f] border-[#3e4f22] text-[#f0e6d2]' : 'bg-[#4a6fa5] border-[#2c3e50] text-[#f0e6d2]'
 
-const getCellClasses = (cell:any, index:number) => { if (index >= store.strength) return 'locked-pattern'; if (cell.type === 'empty') return 'border-dashed border-[#a89f91] bg-[#e6dbc5]/60 hover:bg-[#dfd2ba]'; if (cell.type === 'container') return 'bg-[#eaddcf] border-solid border-[#a89f91]'; return '' }
+const getCellClasses = (cell: GridCell, index:number) => { if (index >= store.strength) return 'locked-pattern'; if (cell.type === 'empty') return 'border-dashed border-[#a89f91] bg-[#e6dbc5]/60 hover:bg-[#dfd2ba]'; if (cell.type === 'container') return 'bg-[#eaddcf] border-solid border-[#a89f91]'; return '' }
 </script>

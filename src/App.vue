@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col md:flex-row shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-[1600px] mx-auto border-x-4 border-[#1a120b] bg-parchment text-[#2c1810] overflow-hidden">
+  <div class="min-h-screen flex flex-col md:flex-row shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-[1600px] mx-auto border-x-4 border-[#1a120b] bg-parchment text-[#2c1810]">
 
     <!-- TOAST NOTIFICATION -->
     <transition name="toast">
@@ -13,10 +13,12 @@
     <Sidebar />
 
     <!-- MAIN -->
-    <div class="flex-1 flex flex-col h-2/3 md:h-full relative">
-      <HeaderBar />
-      <GridArea />
-      <FooterBar />
+    <div class="flex-1 flex flex-col min-h-0 relative overflow-auto">
+      <ErrorBoundary>
+        <HeaderBar />
+        <GridArea />
+        <FooterBar />
+      </ErrorBoundary>
     </div>
   </div>
 </template>
@@ -26,6 +28,7 @@ import Sidebar from './components/Sidebar.vue'
 import HeaderBar from './components/HeaderBar.vue'
 import GridArea from './components/GridArea.vue'
 import FooterBar from './components/FooterBar.vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
 import { useToast } from './composables/useToast'
 
 const { toastMessage } = useToast()

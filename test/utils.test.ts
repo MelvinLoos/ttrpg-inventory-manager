@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { calculateCost, getSlotsNeeded, occupiesIndex, canPlaceItem } from '../src/utils'
+import type { InventoryItem, Item } from '../src/types'
 
 describe('utils.calculateCost', () => {
   it('returns 1 for 0 or small weights', () => {
@@ -27,17 +28,17 @@ describe('utils.getSlotsNeeded', () => {
 
 describe('occupiesIndex & canPlaceItem', () => {
   it('properly detects occupied indices for multi-slot items', () => {
-    const item = { slotCost: 6, position: 4, instanceId: 'a' }
-    expect(occupiesIndex(item as any, 4)).toBe(true)
-    expect(occupiesIndex(item as any, 5)).toBe(true)
-    expect(occupiesIndex(item as any, 6)).toBe(false)
+    const item = { slotCost: 6, position: 4, instanceId: 'a' } as InventoryItem
+    expect(occupiesIndex(item, 4)).toBe(true)
+    expect(occupiesIndex(item, 5)).toBe(true)
+    expect(occupiesIndex(item, 6)).toBe(false)
   })
 
   it('allows placement in empty grid and rejects overlap', () => {
     const gridSize = 10
-    const inventory = [{ slotCost: 3, position: 2, instanceId: 'x' }]
-    const newItem = { slotCost: 6 }
-    expect(canPlaceItem(0, newItem as any, inventory as any, gridSize)).toBe(true)
-    expect(canPlaceItem(2, newItem as any, inventory as any, gridSize)).toBe(false)
+    const inventory: InventoryItem[] = [{ slotCost: 3, position: 2, instanceId: 'x' } as InventoryItem]
+    const newItem = { slotCost: 6 } as Item
+    expect(canPlaceItem(0, newItem, inventory, gridSize)).toBe(true)
+    expect(canPlaceItem(2, newItem, inventory, gridSize)).toBe(false)
   })
 })

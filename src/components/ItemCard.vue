@@ -2,9 +2,13 @@
   <div
     :key="item.id"
     draggable="true"
-    @dragstart="$emit('dragstart', $event, item)"
-    @dragend="$emit('dragend')"
+    tabindex="0"
+    @dragstart="$emit('item-dragstart', $event, item)"
+    @dragend="$emit('item-dragend')"
     @click="$emit('click', item)"
+    @keydown.enter.prevent="$emit('click', item)"
+    @keydown.space.prevent="$emit('click', item)"
+    role="button"
     class="bg-[#3e2723] p-3 rounded-sm hover:bg-[#4a332a] cursor-grab active:cursor-grabbing border border-[#5c4033] group transition-all shadow-md hover:border-[#c5a059]"
   >
     <div class="flex justify-between items-start pointer-events-none">
@@ -21,8 +25,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Item } from '../types'
 
-const props = defineProps<{ item: any; getSlotBadgeColor: (n:number)=>string; getSlotLabel: (n:number)=>string }>()
+const props = defineProps<{ item: Item; getSlotBadgeColor: (n:number)=>string; getSlotLabel: (n:number)=>string }>()
 
 const badgeClass = computed(() => props.getSlotBadgeColor(props.item.slotCost))
 const label = computed(() => props.getSlotLabel(props.item.slotCost))

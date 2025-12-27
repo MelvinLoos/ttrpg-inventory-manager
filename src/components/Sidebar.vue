@@ -28,7 +28,7 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-      <ItemCard v-for="item in filteredLibrary" :key="item.id" :item="item" :getSlotBadgeColor="getSlotBadgeColor" :getSlotLabel="getSlotLabel" @dragstart="onDragStart" @dragend="onDragEnd" @click="handleAdd" />
+      <ItemCard v-for="item in filteredLibrary" :key="item.id" :item="item" :getSlotBadgeColor="getSlotBadgeColor" :getSlotLabel="getSlotLabel" @item-dragstart="onDragStart" @item-dragend="onDragEnd" @click="handleAdd" />
       <div v-if="filteredLibrary.length === 0" class="text-center text-[#5c4033] text-sm italic mt-10">No items match your query.</div>
     </div>
 
@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { Item } from '../types'
 import ItemCard from './ItemCard.vue'
 import { useInventoryStore } from '../stores/inventoryStore'
 import { useImport } from '../composables/useImport'
@@ -69,14 +70,14 @@ const filteredLibrary = computed(() => {
   return items.slice(0, 50)
 })
 
-const onDragStart = (e: DragEvent, item: any) => {
+const onDragStart = (e: DragEvent, item: Item) => {
   if (e.dataTransfer) e.dataTransfer.setData('payload', JSON.stringify({ source: 'library', itemId: item.id }))
   store.setDraggingItem(item)
 }
 
 const onDragEnd = () => store.setDraggingItem(null)
 
-const handleAdd = (item: any) => { if (!store.autoAddItem(item)) showToast('Backpack full!') }
+const handleAdd = (item: Item) => { if (!store.autoAddItem(item)) showToast('Backpack full!') }
 
 const getSlotLabel = (cost: number) => cost === 1 ? 'Small' : cost === 3 ? '1 Slot' : `${cost/3} Slots`
 const getSlotBadgeColor = (cost: number) => cost === 1 ? 'border-[#4a6fa5] text-[#4a6fa5]' : cost === 3 ? 'border-[#556b2f] text-[#556b2f]' : 'border-[#8a1c1c] text-[#8a1c1c]'

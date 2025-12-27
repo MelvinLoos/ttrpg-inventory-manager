@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import type { Item, InventoryItem } from '../types'
 import { findFirstFreeSlot, canPlaceItem } from '../utils'
 import { sampleDb } from '../data/sampleDb'
@@ -7,8 +8,8 @@ import { sampleDb } from '../data/sampleDb'
 export const useInventoryStore = defineStore('inventory', () => {
   const gridSize = 20
   const dbItems = ref<Item[]>([...sampleDb])
-  const inventory = ref<InventoryItem[]>([])
-  const strength = ref<number>(10)
+  const inventory = useLocalStorage<InventoryItem[]>('ttrpg-inventory-inventory', [])
+  const strength = useLocalStorage<number>('ttrpg-inventory-strength', 10)
   const draggingItem = ref<Item | InventoryItem | null>(null)
 
   function autoAddItem(itemDef: Item) {
