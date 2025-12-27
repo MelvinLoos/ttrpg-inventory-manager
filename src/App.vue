@@ -10,57 +10,21 @@
     </transition>
 
     <!-- SIDEBAR -->
-    <div class="w-full md:w-80 bg-[#2a1d15] text-[#dcdcdc] border-r-4 border-[#1a120b] flex flex-col h-1/3 md:h-full z-10 shadow-2xl relative">
-      <div class="p-5 border-b border-[#3e2723] bg-[#2a1d15]">
-        <h2 class="text-xl font-bold text-[#c5a059] flex items-center gap-2 font-fantasy tracking-wider">
-          <i data-lucide="book" class="w-5 h-5 text-[#c5a059]"></i> Compendium
-        </h2>
-        <div class="mt-4 space-y-2 relative">
-          <div class="relative">
-            <input v-model="searchQuery" type="text" placeholder="Search the tome..." class="w-full bg-[#1a120b] text-[#dcdcdc] rounded-sm px-3 py-2 pl-9 focus:ring-1 focus:ring-[#c5a059] outline-none border border-[#5c4033] font-serif italic placeholder-[#5c4033]" />
-            <i data-lucide="search" class="w-4 h-4 text-[#8a6a4b] absolute left-3 top-3"></i>
-          </div>
-          <div class="flex gap-2">
-            <select v-model="filterCategory" class="w-1/2 bg-[#1a120b] text-[#c5a059] rounded-sm px-2 py-1 text-xs border border-[#5c4033] outline-none focus:border-[#c5a059] cursor-pointer">
-              <option value="all">All Types</option>
-              <option value="weapon">Weapons</option>
-              <option value="armor">Armor</option>
-              <option value="gear">Gear</option>
-              <option value="consumable">Consumables</option>
-            </select>
-            <select v-model="filterSize" class="w-1/2 bg-[#1a120b] text-[#c5a059] rounded-sm px-2 py-1 text-xs border border-[#5c4033] outline-none focus:border-[#c5a059] cursor-pointer">
-              <option value="all">All Sizes</option>
-              <option value="small">Small</option>
-              <option value="standard">Standard</option>
-              <option value="heavy">Heavy</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-        <div v-for="item in filteredLibrary" :key="item.id" draggable="true" @dragstart="startDragNew($event, item)" @dragend="endDrag" @click="autoAddItem(item)" class="bg-[#3e2723] p-3 rounded-sm hover:bg-[#4a332a] cursor-grab active:cursor-grabbing border border-[#5c4033] group transition-all shadow-md hover:border-[#c5a059]">
-          <div class="flex justify-between items-start pointer-events-none">
-            <div>
-              <div class="font-bold text-[#e0d0b0]">{{ item.name }}</div>
-              <div class="text-xs text-[#a89f91] italic">{{ item.weight }} lbs</div>
-            </div>
-            <div class="flex flex-col items-end">
-              <span :class="getSlotBadgeColor(item.slotCost)" class="text-xs px-2 py-0.5 rounded-sm font-fantasy border text-shadow-sm">{{ getSlotLabel(item.slotCost) }}</span>
-            </div>
-          </div>
-        </div>
-        <div v-if="filteredLibrary.length === 0" class="text-center text-[#5c4033] text-sm italic mt-10">No items match your query.</div>
-      </div>
-
-      <div class="p-4 bg-[#23170f] border-t border-[#3e2723] flex flex-col gap-2">
-        <label class="cursor-pointer bg-[#3e2723] hover:bg-[#4a332a] text-[#c5a059] border border-[#5c4033] py-2 px-3 rounded-sm text-xs font-fantasy tracking-wider text-center transition-colors flex items-center justify-center gap-2">
-          <i data-lucide="upload" class="w-3 h-3"></i> Import 5e.tools JSON
-          <input type="file" @change="import5eData" class="hidden" accept=".json" />
-        </label>
-        <div class="text-xs text-[#8a6a4b] text-center italic font-serif">"A heavy pack makes for a short journey."</div>
-      </div>
-    </div>
+    <Sidebar
+      :filteredLibrary="filteredLibrary"
+      :searchQuery="searchQuery"
+      :filterCategory="filterCategory"
+      :filterSize="filterSize"
+      :getSlotBadgeColor="getSlotBadgeColor"
+      :getSlotLabel="getSlotLabel"
+      @autoAdd="autoAddItem"
+      @import="import5eData"
+      @dragend="endDrag"
+      @dragstart="startDragNew"
+      @update:searchQuery="val => searchQuery.value = val"
+      @update:filterCategory="val => filterCategory.value = val"
+      @update:filterSize="val => filterSize.value = val"
+    />
 
     <!-- MAIN -->
     <div class="flex-1 flex flex-col h-2/3 md:h-full relative">
@@ -130,201 +94,79 @@
     </div>
   </div>
 </template>
-
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUpdated, nextTick } from 'vue'
-
-/* --- LOGIC HELPERS --- */
-const calculateCost = (lbs) => {
-  const weight = typeof lbs === 'number' ? lbs : 0;
-  if (weight <= 2) return 1;
-  if (weight <= 10) return 3;
-  if (weight <= 25) return 6;
-  if (weight <= 50) return 9;
-  return 12;
-}
-
-const determineCategory = (type, name) => {
-  const t = type ? type.split('|')[0] : '';
-  const n = name ? name.toLowerCase() : '';
-  if (['M', 'R', 'A'].includes(t) || n.includes('sword') || n.includes('axe') || n.includes('bow')) return 'weapon';
-  if (['LA', 'MA', 'HA', 'S'].includes(t) || n.includes('armor') || n.includes('shield')) return 'armor';
-  if (['P', 'SC', 'FD'].includes(t) || n.includes('potion') || n.includes('scroll')) return 'consumable';
-  return 'gear';
-}
-
-const getIconForType = (type, name) => {
-  const n = (name || '').toLowerCase();
-  if (n.includes('potion')) return '🧪';
-  if (n.includes('scroll')) return '📜';
-  if (n.includes('sword') || n.includes('axe') || n.includes('dagger')) return '⚔️';
-  if (n.includes('shield')) return '🛡️';
-  if (n.includes('armor') || n.includes('mail') || n.includes('plate')) return '🥋';
-  return '📦';
-}
-
-/* --- INITIAL DATA --- */
-const INITIAL_DB_ITEMS = [
-  { id: 'dagger', name: 'Dagger', weight: 1 },
-  { id: 'potion', name: 'Healing Potion', weight: 0.5 },
-  { id: 'rope', name: 'Hempen Rope', weight: 10 },
-  { id: 'longsword', name: 'Longsword', weight: 3 },
-  { id: 'shield', name: 'Shield', weight: 6 },
-  { id: 'plate', name: 'Plate Armor', weight: 65 },
-  { id: 'ration', name: 'Ration', weight: 2 },
-  { id: 'torch', name: 'Torch', weight: 1 },
-  { id: 'bedroll', name: 'Bedroll', weight: 7 },
-  { id: 'greataxe', name: 'Greataxe', weight: 7 }
-].map(i => ({
-  ...i,
-  slotCost: calculateCost(i.weight),
-  category: determineCategory(null, i.name),
-  icon: getIconForType(null, i.name)
-}))
+import Sidebar from './components/Sidebar.vue'
+import HeaderBar from './components/HeaderBar.vue'
+import GridArea from './components/GridArea.vue'
+import FooterBar from './components/FooterBar.vue'
+import { calculateCost, getSlotsNeeded, determineCategory, getIconForType, canPlaceItem, findFirstFreeSlot } from './utils'
+import { useToast } from './composables/useToast'
+import { useShare } from './composables/useShare'
+import { useImport } from './composables/useImport'
+import { useDrag } from './composables/useDrag'
+import { sampleDb } from './data/sampleDb'
 
 /* --- STATE --- */
-const strength = ref(10)
+const gridSize = 20
+const dbItems = ref([])
 const inventory = ref([])
-const dbItems = ref(INITIAL_DB_ITEMS)
+const strength = ref(10)
 const searchQuery = ref('')
 const filterCategory = ref('all')
 const filterSize = ref('all')
 const copied = ref(false)
-const toastMessage = ref('')
 
-const draggingItem = ref(null)
-const dragOverIndex = ref(-1)
-const isDragValid = ref(true)
+// composables
+const { toastMessage, showToast } = useToast()
+const { copyShareLink: _copyShareLink, loadFromUrl: _loadFromUrl } = useShare({ inventory, strength })
+const { import5eData } = useImport({ dbItems, showToast })
+const { draggingItem, dragOverIndex, isDragValid, startDragNew, startDragExisting, endDrag, onDragOver, onDrop, getDragStateClass } = useDrag({ inventory, dbItems, gridSize, showToast })
 
-/* --- COMPUTED: GRID --- */
+const copyShareLink = async () => {
+  const ok = await _copyShareLink()
+  if (ok) { copied.value = true; setTimeout(() => copied.value = false, 2000) }
+  else showToast('Copy failed')
+}
+
+/* --- HELPERS (extracted to src/utils.ts) --- */
+
+/* --- SAMPLE LIBRARY --- */
+dbItems.value = sampleDb
+
+/* --- GRID / DISPLAY --- */
 const gridDisplay = computed(() => {
-  const cells = new Array(20).fill(null).map(() => ({ type: 'empty' }))
+  const cells = Array.from({ length: gridSize }, () => ({ type: 'empty' }))
+  // place items
   inventory.value.forEach(item => {
-    const pos = item.position
-    if (pos < 0 || pos >= 20) return
     if (item.slotCost === 1) {
-      if (cells[pos].type === 'empty') cells[pos] = { type: 'container', items: [item] }
-      else if (cells[pos].type === 'container') {
-        if (!cells[pos].items.find(i => i.instanceId === item.instanceId)) cells[pos].items.push(item)
-      }
+      const pos = item.position
+      if (!cells[pos] || cells[pos].type === 'empty') cells[pos] = { type: 'container', items: [item] }
+      else if (cells[pos].type === 'container') cells[pos].items.push(item)
     } else {
-      const slotsNeeded = item.slotCost / 3
-      for (let k = 0; k < slotsNeeded; k++) if (pos + k < 20) cells[pos + k] = { type: 'item', item, instanceId: item.instanceId, part: k + 1 }
+      const slots = getSlotsNeeded(item.slotCost)
+      for (let i = 0; i < slots; i++) {
+        const idx = item.position + i
+        if (idx < gridSize) cells[idx] = { type: 'item', item, part: i + 1 }
+      }
     }
   })
   return cells
 })
 
-const getSlotsNeeded = (cost) => Math.ceil(cost / 3)
+/* --- PLACEMENT LOGIC --- */
+// canPlaceItem and findFirstFreeSlot are provided by ./utils and expect inventory.value and gridSize
 
-const canPlaceItem = (startIndex, item, excludeInstanceId = null) => {
-  const slotsNeeded = getSlotsNeeded(item.slotCost)
-  const isSmall = item.slotCost === 1
-  if (startIndex < 0 || startIndex + slotsNeeded > 20) return false
-  for (let i = 0; i < slotsNeeded; i++) {
-    const idx = startIndex + i
-    const otherItems = inventory.value.filter(inv => inv.instanceId !== excludeInstanceId)
-    const occupants = otherItems.filter(inv => {
-      if (inv.slotCost === 1) return inv.position === idx
-      const s = getSlotsNeeded(inv.slotCost)
-      return idx >= inv.position && idx < inv.position + s
-    })
-    if (occupants.length > 0) {
-      if (isSmall && occupants.every(o => o.slotCost === 1) && occupants.length < 3) {
-        // allowed
-      } else return false
-    }
-  }
-  return true
-}
+/* --- DRAG / DROP provided by composable (useDrag) --- */
 
-const findFirstFreeSlot = (item) => { for (let i = 0; i < 20; i++) if (canPlaceItem(i, item)) return i; return -1 }
-
-/* --- DRAG & DROP --- */
-const startDragNew = (event, item) => {
-  event.dataTransfer.dropEffect = 'copy'
-  event.dataTransfer.effectAllowed = 'copy'
-  const payload = { source: 'library', itemId: item.id }
-  event.dataTransfer.setData('payload', JSON.stringify(payload))
-  draggingItem.value = { ...item, slotCost: item.slotCost }
-}
-
-const startDragExisting = (event, item) => {
-  event.dataTransfer.dropEffect = 'move'
-  event.dataTransfer.effectAllowed = 'move'
-  const payload = { source: 'grid', instanceId: item.instanceId }
-  event.dataTransfer.setData('payload', JSON.stringify(payload))
-  draggingItem.value = item
-}
-
-const onDragOver = (index) => {
-  if (!draggingItem.value) return
-  if (dragOverIndex.value !== index) {
-    dragOverIndex.value = index
-    const excludeId = draggingItem.value.instanceId || null
-    isDragValid.value = canPlaceItem(index, draggingItem.value, excludeId)
-  }
-}
-
-const endDrag = () => clearDragState()
-const clearDragState = () => { draggingItem.value = null; dragOverIndex.value = -1; isDragValid.value = true }
-
-const onDrop = (event, targetIndex) => {
-  const raw = event.dataTransfer.getData('payload')
-  clearDragState()
-  if (!raw) return
-  const data = JSON.parse(raw)
-  if (data.source === 'library') {
-    const itemDef = dbItems.value.find(i => i.id === data.itemId)
-    if (!itemDef) return
-    if (canPlaceItem(targetIndex, itemDef)) inventory.value.push({ ...itemDef, instanceId: Date.now() + Math.random(), position: targetIndex })
-    else showToast('Cannot place item here! Slot blocked.')
-  } else if (data.source === 'grid') {
-    const itemIdx = inventory.value.findIndex(i => i.instanceId === data.instanceId)
-    if (itemIdx === -1) return
-    const item = inventory.value[itemIdx]
-    if (canPlaceItem(targetIndex, item, item.instanceId)) item.position = targetIndex
-    else showToast('Move rejected! No space.')
-  }
-}
-
-const autoAddItem = (itemDef) => { const pos = findFirstFreeSlot(itemDef); if (pos !== -1) inventory.value.push({ ...itemDef, instanceId: Date.now() + Math.random(), position: pos }); else showToast('Backpack full!') }
+/* --- LIBRARY / MUTATIONS --- */
+const autoAddItem = (itemDef) => { const pos = findFirstFreeSlot(itemDef, inventory.value, gridSize); if (pos !== -1) inventory.value.push({ ...itemDef, instanceId: Date.now() + Math.random(), position: pos }); else showToast('Backpack full!') }
 const removeItem = (instanceId) => { inventory.value = inventory.value.filter(i => i.instanceId !== instanceId) }
 const clearInventory = () => inventory.value = []
 
-const showToast = (msg) => { toastMessage.value = msg; setTimeout(() => toastMessage.value = '', 2000) }
+/* showToast and getDragStateClass provided by composables */
 
-const getDragStateClass = (index) => {
-  if (!draggingItem.value || dragOverIndex.value === -1) return ''
-  const slotsNeeded = getSlotsNeeded(draggingItem.value.slotCost)
-  if (index >= dragOverIndex.value && index < dragOverIndex.value + slotsNeeded) return isDragValid.value ? 'drag-valid' : 'drag-invalid'
-  return ''
-}
-
-/* --- IMPORT/EXPORT & SHARE --- */
-const copyShareLink = () => {
-  const compressed = inventory.value.map(item => [item.id, item.position])
-  const data = { s: strength.value, c: compressed }
-  const str = btoa(JSON.stringify(data))
-  const url = new URL(window.location)
-  url.searchParams.set('loadout', str)
-  navigator.clipboard.writeText(url.toString())
-  copied.value = true
-  setTimeout(() => copied.value = false, 2000)
-}
-
-const loadFromUrl = () => {
-  const params = new URLSearchParams(window.location.search)
-  const loadout = params.get('loadout')
-  if (loadout) {
-    try {
-      const data = JSON.parse(atob(loadout))
-      strength.value = data.s || 10
-      if (data.i) data.i.forEach(id => { const def = dbItems.value.find(x => x.id === id); if (def) autoAddItem(def) })
-      else if (data.c) data.c.forEach(([id, pos]) => { const def = dbItems.value.find(x => x.id === id); if (def) inventory.value.push({ ...def, instanceId: Date.now() + Math.random(), position: pos }) })
-    } catch (e) { console.error('Invalid loadout') }
-  }
-}
+/* --- IMPORT/EXPORT & SHARE provided by composable (useShare) --- */
 
 const filteredLibrary = computed(() => {
   let items = dbItems.value
@@ -346,34 +188,11 @@ const getSlotBadgeColor = (cost) => cost === 1 ? 'border-[#4a6fa5] text-[#4a6fa5
 const getItemColor = (cost) => cost > 3 ? 'bg-[#8a1c1c] border-[#601010] text-[#f0e6d2]' : cost === 3 ? 'bg-[#556b2f] border-[#3e4f22] text-[#f0e6d2]' : 'bg-[#4a6fa5] border-[#2c3e50] text-[#f0e6d2]'
 const getCellClasses = (cell, index) => { if (index >= strength.value) return 'locked-pattern'; if (cell.type === 'empty') return 'border-dashed border-[#a89f91] bg-[#e6dbc5]/60 hover:bg-[#dfd2ba]'; if (cell.type === 'container') return 'bg-[#eaddcf] border-solid border-[#a89f91]'; return '' }
 
-const import5eData = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const json = JSON.parse(e.target.result)
-      let sourceArray = Array.isArray(json) ? json : (json.item || [])
-      const newItems = sourceArray.filter(i => !i._copy).map(i => {
-        const weight = i.weight || 0
-        return { id: i.name.toLowerCase().replace(/\s+/g, '-'), name: i.name, weight, slotCost: calculateCost(weight), icon: getIconForType(i.type, i.name), category: determineCategory(i.type, i.name) }
-      })
-      const existingIds = new Set(dbItems.value.map(i => i.id))
-      const unique = newItems.filter(i => !existingIds.has(i.id))
-      dbItems.value = [...dbItems.value, ...unique]
-      if (unique.length > 0) showToast(`Added ${unique.length} items!`)
-      else showToast('No new items found.')
-    } catch (err) { showToast('Failed to parse JSON.') }
-  }
-  reader.readAsText(file)
-}
-
-onMounted(() => { nextTick(() => window.lucide && window.lucide.createIcons()); loadFromUrl() })
+onMounted(() => { nextTick(() => window.lucide && window.lucide.createIcons()); _loadFromUrl({ dbItems, inventoryRef: inventory }) })
 onUpdated(() => nextTick(() => window.lucide && window.lucide.createIcons()))
 </script>
 
 <style>
-/* Migrated inline styles (small subset) */
 .font-fantasy { font-family: 'Cinzel', serif; }
 body { font-family: 'Crimson Text', serif; }
 ::-webkit-scrollbar { width: 8px }
